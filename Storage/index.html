@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="description" content="testing view image" />
+    <title>View image</title>
+    <!-- <script src="http://localhost:3000/socket.io/socket.io.js"></script> -->
+    <!-- <script src="/socket.io/socket.io.js"></script> -->
+    <style>
+      /* Table content
+        1a. upload file to server
+        2a. list of image
+          2a.1 number
+          2a.2 thumbnail
+          2a.3 image name
+          2a.4 action
+       */
+
+      body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        
+        font-size: 15px;
+
+        max-width: 100%;
+        padding:0
+
+      }
+
+      /* 1. upload file to server ---------- */
+      .uploadfile {
+        display: flex;
+        flex-direction: column;
+        
+        margin: 0 20px;
+        padding: 0 20px 20px 20px;
+
+        border: 1px solid;
+        border-radius: 8px;
+      }
+
+      .uploadfile input {
+        width: 400px;
+        cursor: pointer;
+      }
+
+      .image-preview {
+        margin: 15px 0;
+      }
+
+      .image-preview__image{
+        display: none;
+        width: 150px; 
+        height: 100px;
+      }
+
+      .image-preview__default-text {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        width: 150px; 
+        height: 100px;
+
+        border: 1px solid;
+        border-radius: 8px;
+      }
+
+      .btn-upload {
+        width:100px;
+        padding: 5px;
+        border-radius: 8px;
+        border: none;
+        outline: none;
+        background-color: #2c579b;
+        color:white;
+        margin-right: 15px;
+      }
+
+      .btn-upload:hover {
+        cursor: pointer;
+        background-color: transparent;
+        color: black
+      }
+
+      /* 2. List of images ----------*/
+      /* .title {
+        /* display: flex;
+        margin: 30px 0 0px 20px;
+        /* align-items: center;
+        justify-content: center; */
+      
+
+      .table {
+        display: flex;
+        flex-direction: column;
+        
+        margin-top:10px;
+        padding: 20px
+      }
+
+      table {
+        /* padding: 0 20px; */
+        /* border-collapse: collapse; */
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      thead {
+        background-color:#2c579b;
+        color: white;
+      }
+
+      th {
+        font-size: 18px;
+        padding: 10px
+      }
+
+      td {
+        min-width: 300px;
+        margin: 10px 0
+      }
+
+      tr:nth-child(even) {background-color: #f2f2f2;}
+
+      /* 2.1 List of images - number ----------*/
+      .table-no {
+        min-width: 50px;
+        width: 50px;
+      }
+
+      .table-no p {
+        display: flex;
+        justify-content: center;
+      }
+
+      /* 2.2 List of images - thumbnail ----------*/
+      .table-thumbnail {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 200px;
+        width: 200px;
+      }
+
+      .table-thumbnail .thumbnail {
+        max-width: 80px;
+        max-height: 80px;
+      }
+
+
+      /* 2.3 List of images - image name ----------*/
+      .table-name {
+        min-width: 300px;
+        padding: 20px
+      }
+
+      /* 2.4 List of images - action ----------*/
+      .table-button {
+        min-width: 300px;
+        padding: 20px
+      }
+
+      .btn-container {
+        padding-left: 20px;
+      }
+
+      .btn-save {
+        padding: 5px;
+        border-radius: 8px;
+        border: none;
+        outline: none;
+        background-color: #2c579b;
+        color:white;
+        margin-right: 15px;
+      }
+
+      .btn-delete {
+        padding: 5px;
+        border-radius: 8px;
+        border: none;
+        outline: none;
+        background-color: red;
+        color: white
+      } 
+
+      .btn-save:hover {
+        cursor: pointer;
+        background-color: transparent;
+        color: black;
+        outline: none
+      }
+      .btn-delete:hover {
+        cursor: pointer;
+        background-color: transparent;
+        color: black;
+        outline: none
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app</noscript>
+
+    <!-- Hiển thị nút chọn file, review hình ảnh và gửi hình lên server -->
+    <div class="uploadfile">
+      <!-- tiêu đề -->
+      <h2>Upload file to server</h2>
+      <!-- Chọn file -->
+      <input
+        type="file"
+        name="inpFile"
+        id="inpFile"
+      />
+      <!-- Review -->
+      <div class="image-preview" id="imagePreview">
+        <img src="" class="image-preview__image">
+        <span class="image-preview__default-text">Image preview</span>  
+      </div>
+      <!-- Button gửi hình ảnh -->
+      <button class="btn-upload" id="upload">Upload</button></td>
+    </div>
+    
+    <!----- Bảng danh sách hình ảnh ----->
+    <div class="table">
+      <div class="title">
+        <h2>List of images</h2>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Thumbnail</th>
+            <th>Image name</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="data"></tbody>
+      </table>
+    </div>
+    <script>
+      const urldata = "data.json"
+      const urldata2 = "http://localhost:3000/data"
+      const urlUpLoad = "http://192.168.100.248:7000/upload"
+      const urlSaveImage = "http://localhost:3000/getdata"
+      const urlDelImage = "http://localhost:3000/deldata"
+
+      // upload hình ảnh ----------
+      const inpFile = document.getElementById("inpFile");
+      const previewContainer = document.getElementById("imagePreview");
+      const previewImage = previewContainer.querySelector(".image-preview__image")
+      const previewDefaultText = previewContainer.querySelector(".image-preview__default-text")
+
+      inpFile.addEventListener("change", function(){
+        const file = this.files[0]
+        if(file){
+          const reader = new FileReader()
+          previewDefaultText.style.display = "none"
+          previewImage.style.display = "block"
+          reader.addEventListener("load", function() {
+            previewImage.setAttribute("src", this.result)
+          })
+          reader.readAsDataURL(file)
+        }
+      })
+
+      // bắt sự kiện upload hình ảnh lên server http://192.168.100.248:7000/upload
+      const upload = document.getElementById("upload")
+      upload.addEventListener("click", function() {
+        var formdata = new FormData();
+        formdata.append("data", inpFile.files[0]);
+        var requestOptions = {
+          method: 'POST',
+          mode: "no-cors",
+          body: formdata,
+          redirect: 'follow'
+        };
+
+        fetch(urlUpLoad, requestOptions)
+          .then(response => response.text())
+          // .then(result => console.log(result))
+          .then(result => {
+            alert("successfully uploaded")
+            location.reload()
+          })
+          .catch(error => console.log('error', error));
+      })
+      
+      // lấy thông tin hình ảnh từ file data.json ----------
+      fetch(urldata)
+        .then((res) => res.json())
+        .then((result) => {
+          if (result.table.length > 0) {
+
+            // chạy vòng lặp để hiện thị dữ liệu lên web -----------
+            var temp = "";
+            for (i = 0; i < result.table.length; i++) {
+              temp += "<tr>";
+              temp +=
+                  `
+                    <td class="table-no"><p>${i + 1}</p></td>
+                    <td class="table-thumbnail">
+                      <div>
+                      <img src="http://localhost:8091/Data/${result.table[i]}" 
+                            alt="thumbnail" 
+                            class="thumbnail" 
+                            >
+                      </div>
+                    </td>
+                    <td id = 'name ${i}' contenteditable="true" class="table-name">` 
+                    + result.table[i] +
+                    `</td>
+                    <td>
+                      <div class="btn-container">
+                      <button class="btn-save" id="save ${i}">Save</button>
+                      <button class="btn-delete" id="delete ${i}">Delete</button>
+                      </div>
+                    </td>
+                    <div id="checkDel ${i}" style="display: none"> 
+                      <p>Are you sure to remove this item</p>
+                      <button id="Yes ${i}">Yes</button>
+                      <button id="No ${i}">No</button>
+                    </div>
+                    </tr>
+                  `;
+            }
+
+            document.getElementById("data").innerHTML = temp;
+
+            // sự kiện click để lưu thông tin hình ảnh ----------
+
+            function buttonSave(index) {
+              return function () {
+                var updateContent = document.getElementById(`name ${index}`)
+                  .innerText;
+
+                var myHeaders = new Headers();
+                myHeaders.append("Content-Type", "application/json");
+
+                var raw = JSON.stringify({
+                  newname: updateContent,
+                  idx: index,
+                });
+
+                var requestOptions = {
+                  method: "POST",
+                  headers: myHeaders,
+                  body: raw,
+                  redirect: "follow",
+                };
+
+                fetch(urlSaveImage, requestOptions)
+                  .then((response) => response.text())
+                  .then((result) => {
+                      alert(result)
+                      location.reload()
+                    })
+                  .catch((error) => console.log("error", error));
+              };
+            }
+
+            // sự kiện click yes để xóa hình ảnh ----------
+            function buttonYesDel(index) {
+              return function () {
+                var updateContent = document.getElementById(`name ${index}`)
+                  .innerText;
+
+                var myHeaders = new Headers();
+                myHeaders.append("Content-Type", "application/json");
+
+                var raw = JSON.stringify({
+                  newname: updateContent,
+                });
+
+                var requestOptions = {
+                  method: "POST",
+                  headers: myHeaders,
+                  body: raw,
+                  redirect: "follow",
+                };
+
+                fetch(urlDelImage, requestOptions)
+                  .then((response) => response.text())
+                  .then((result) => {
+                      alert(result)
+                      location.reload()
+                    })
+                  .catch((error) => console.log("error", error));
+              };
+            }
+
+            // bắt sự kiện click delete để xuất hiện hộp thoại check yes/no
+            function buttonDel(index){
+              return function(){
+                var delCheck = document.getElementById(`checkDel ${index}`)
+
+                delCheck.style.display = "block"
+              }
+            }
+
+            // bắt sự kiện click no - delete để cancel sự kiện delete
+            function buttonNoDel(index){
+              return function(){
+                location.reload()
+              }
+            }
+
+            // chạy vòng lặp để tìm kiếm và lưu hoặc xóa
+            for (i = 0; i < result.table.length; i++) {
+              var saveBtn = document.getElementById(`save ${i}`);
+              var delBtn = document.getElementById(`delete ${i}`)
+              var yesDelBtn = document.getElementById(`Yes ${i}`);
+              var noDelBtn = document.getElementById(`No ${i}`);
+
+              saveBtn.addEventListener("click", buttonSave(i));
+              delBtn.addEventListener("click", buttonDel(i));
+              yesDelBtn.addEventListener("click", buttonYesDel(i));
+              noDelBtn.addEventListener("click", buttonNoDel(i));
+            }
+          }
+        });
+    </script>
+  </body>
+</html>
+
+
+<!-- <img src="http://127.0.0.1:5500/Data/${result.table[i]}"  -->
